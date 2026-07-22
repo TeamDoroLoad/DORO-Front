@@ -29,7 +29,7 @@ function delay<T>(value: T, ms = 250): Promise<T> {
 type QueryValue = string | number | boolean | undefined | null
 
 async function getJson<T>(path: string, params?: Record<string, QueryValue>): Promise<T> {
-  const url = new URL(BASE_URL + path)
+  const url = new URL(BASE_URL + path, window.location.origin)
   Object.entries(params ?? {}).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') url.searchParams.set(key, String(value))
   })
