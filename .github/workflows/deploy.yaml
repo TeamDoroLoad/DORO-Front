@@ -1,0 +1,46 @@
+name: Deploy DORO Front
+
+on:
+  push:
+    branches:
+      - main # main 브랜치에 push가 발생하면 작동합니다.
+
+env:
+  AWS_REGION: ap-northeast-2
+  S3_BUCKET: team2-doro-s3-front
+
+jobs:
+  deploy-frontend:
+    name: Build and Deploy Frontend to S3
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        env:
+          VITE_API_BASE_URL: /api/v1          # CloudFront가 같은 도메인에서 /api/* 를 백엔드로 라우팅하므로 상대경로 사용
+          VITE_USE_MOCK: "false"
+          VITE_TMAP_APP_KEY: ${{ secrets.VITE_TMAP_APP_KEY }}
+        run: npm run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync build output to S3
+        run: aws s3 sync dist "s3://$S3_BUCKET" --delete
