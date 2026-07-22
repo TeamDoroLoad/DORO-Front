@@ -1,11 +1,8 @@
 // DORO_Load_AWS_Endpoint_API_명세서.md §5~7 기준 (camelCase, WGS84, Meter, kW, KRW)
 
-export type ChargeMode = 'AC' | 'DC'
-
 export interface ConnectorType {
   connectorCode: string
   connectorName: string
-  chargeMode: ChargeMode
 }
 
 export interface VehicleTrim {

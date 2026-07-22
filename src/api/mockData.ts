@@ -12,11 +12,11 @@ import { pointFromOffset } from '../utils/geo'
 import { hashString, mulberry32 } from '../utils/seededRandom'
 
 export const MOCK_CONNECTOR_TYPES: ConnectorType[] = [
-  { connectorCode: 'DC_COMBO', connectorName: 'DC 콤보', chargeMode: 'DC' },
-  { connectorCode: 'DC_CHADEMO', connectorName: 'DC 차데모', chargeMode: 'DC' },
-  { connectorCode: 'AC_SLOW', connectorName: 'AC 완속(5핀)', chargeMode: 'AC' },
-  { connectorCode: 'AC3', connectorName: 'AC 3상', chargeMode: 'AC' },
-  { connectorCode: 'NACS', connectorName: 'NACS(테슬라)', chargeMode: 'DC' },
+  { connectorCode: 'DC_COMBO', connectorName: 'DC 콤보' },
+  { connectorCode: 'DC_CHADEMO', connectorName: 'DC 차데모' },
+  { connectorCode: 'AC_SLOW', connectorName: 'AC 완속(5핀)' },
+  { connectorCode: 'AC3', connectorName: 'AC 3상' },
+  { connectorCode: 'NACS', connectorName: 'NACS(테슬라)' },
 ]
 
 export const MOCK_VEHICLE_TRIMS: VehicleTrim[] = [
