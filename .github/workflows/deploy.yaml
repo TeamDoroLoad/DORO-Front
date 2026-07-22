@@ -8,6 +8,7 @@ on:
 env:
   AWS_REGION: ap-northeast-2
   S3_BUCKET: team2-doro-s3-front
+  CLOUDFRONT_DISTRIBUTION_ID: E3RZHD5Y24C4BO   # doro.beam0331.click 프로덕션 배포
 
 jobs:
   deploy-frontend:
@@ -44,3 +45,8 @@ jobs:
 
       - name: Sync build output to S3
         run: aws s3 sync dist "s3://$S3_BUCKET" --delete
+
+      # S3만 갱신하고 CloudFront 캐시를 그대로 두면, 배포 후에도 예전 index.html/자산이
+      # 계속 서빙된다(실제로 겪은 문제 — 새 파일이 S3엔 있는데 브라우저엔 예전 버전이 뜸).
+      - name: Invalidate CloudFront cache
+        run: aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*"
