@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import type { Brand, ChargingNetwork, VehicleSettings, VehicleTrim } from '../types'
 import { fetchBrands, fetchChargingNetworks, fetchVehicleTrims } from '../api/client'
 import { useVehicleSettings } from '../composables/useVehicleSettings'
@@ -64,6 +64,26 @@ async function onBrandChange() {
   form.modelName = models.value[0] ?? ''
   form.vehicleTrimId = trimOptions.value[0]?.vehicleTrimId ?? null
 }
+
+// 브랜드 커스텀 드롭다운: 평소엔 접혀있다가 클릭하면 열리고, 목록은 6줄만 보이고 스크롤됨
+const brandDropdownOpen = ref(false)
+const brandDropdownRef = ref<HTMLElement | null>(null)
+
+async function selectBrand(brandName: string) {
+  form.brand = brandName
+  brandDropdownOpen.value = false
+  await onBrandChange()
+}
+
+function handleClickOutside(e: MouseEvent) {
+  if (brandDropdownRef.value && !brandDropdownRef.value.contains(e.target as Node)) {
+    brandDropdownOpen.value = false
+  }
+}
+
+onMounted(() => document.addEventListener('click', handleClickOutside))
+onUnmounted(() => document.removeEventListener('click', handleClickOutside))
+
 function onModelChange() {
   form.vehicleTrimId = trimOptions.value[0]?.vehicleTrimId ?? null
 }
@@ -96,9 +116,27 @@ function onSave() {
       <h2>차량 정보</h2>
       <label class="field">
         <span>브랜드 <em>*</em></span>
-        <select v-model="form.brand" @change="onBrandChange" size="6" class="brand-select">
-          <option v-for="b in brands" :key="b.brandId" :value="b.brandName">{{ b.brandName }}</option>
-        </select>
+        <div class="dropdown" ref="brandDropdownRef">
+          <button
+            type="button"
+            class="dropdown-trigger"
+            :aria-expanded="brandDropdownOpen"
+            @click="brandDropdownOpen = !brandDropdownOpen"
+          >
+            <span>{{ form.brand || '브랜드 선택' }}</span>
+            <span class="chevron" :class="{ open: brandDropdownOpen }">▾</span>
+          </button>
+          <ul v-if="brandDropdownOpen" class="dropdown-list">
+            <li
+              v-for="b in brands"
+              :key="b.brandId"
+              :class="{ active: b.brandName === form.brand }"
+              @click="selectBrand(b.brandName)"
+            >
+              {{ b.brandName }}
+            </li>
+          </ul>
+        </div>
       </label>
       <label class="field">
         <span>모델 <em>*</em></span>
@@ -199,17 +237,61 @@ select {
   background: var(--doro-bg);
   color: var(--doro-text);
 }
-/* size 속성으로 목록형(listbox)이 된 select — 6줄만 보이고 나머지는 스크롤 */
-/* size=N의 브라우저 자동 높이 계산이 option padding과 어긋나 6줄보다 훨씬 크게 렌더링되는
-   문제가 있어, 높이를 직접 고정한다 (6줄 * 28px). */
-.brand-select {
-  height: 168px;
-  overflow-y: auto;
-  padding: 4px;
+/* 브랜드 커스텀 드롭다운: 평소엔 닫혀있고, 클릭하면 목록이 열림 (6줄만 보이고 스크롤) */
+.dropdown {
+  position: relative;
 }
-.brand-select option {
-  padding: 7px 6px;
+.dropdown-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--doro-border);
+  border-radius: 6px;
+  padding: 9px 10px;
+  font-size: 13.5px;
+  background: var(--doro-bg);
+  color: var(--doro-text);
+  cursor: pointer;
+  text-align: left;
+}
+.dropdown-trigger .chevron {
+  font-size: 11px;
+  color: var(--doro-muted);
+  transition: transform 0.15s;
+}
+.dropdown-trigger .chevron.open {
+  transform: rotate(180deg);
+}
+.dropdown-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: #fff;
+  border: 1px solid var(--doro-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 23, 90, 0.15);
+  max-height: 168px; /* 6줄 * 28px */
+  overflow-y: auto;
+}
+.dropdown-list li {
+  padding: 7px 8px;
   border-radius: 4px;
+  font-size: 13.5px;
+  color: var(--doro-text);
+  cursor: pointer;
+}
+.dropdown-list li:hover {
+  background: var(--doro-bg);
+}
+.dropdown-list li.active {
+  background: var(--doro-blue);
+  color: #fff;
 }
 input[type='range'] {
   accent-color: var(--doro-blue);
