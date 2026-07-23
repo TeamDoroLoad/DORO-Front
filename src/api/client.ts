@@ -2,6 +2,7 @@
 // VITE_USE_MOCK=true일 때만 mockData.ts로 응답하고, 그 외(미설정 포함)에는 VITE_API_BASE_URL로 실제 요청한다.
 // 값이 없을 때 mock으로 fallback되지 않도록 fail-closed로 설계 — 빌드 파이프라인에서 변수 주입을 빠뜨려도 실제 API를 호출한다.
 import type {
+  Brand,
   ChargingNetwork,
   ConnectorType,
   GeocodeCandidate,
@@ -11,6 +12,7 @@ import type {
   VehicleTrim,
 } from '../types'
 import {
+  MOCK_BRANDS,
   MOCK_CHARGING_NETWORKS,
   MOCK_CONNECTOR_TYPES,
   MOCK_VEHICLE_TRIMS,
@@ -42,9 +44,16 @@ async function getJson<T>(path: string, params?: Record<string, QueryValue>): Pr
   return body.data as T
 }
 
-export async function fetchVehicleTrims(): Promise<VehicleTrim[]> {
-  if (USE_MOCK) return delay(MOCK_VEHICLE_TRIMS)
-  return getJson<VehicleTrim[]>('/vehicle-trims', { size: 100 })
+export async function fetchBrands(): Promise<Brand[]> {
+  if (USE_MOCK) return delay(MOCK_BRANDS)
+  return getJson<Brand[]>('/brands')
+}
+
+// brandName을 넘기면 해당 브랜드로 범위를 좁혀 조회한다 — 브랜드 단위 트림 수는
+// Pagination size(100)를 넘지 않는다고 가정할 수 있어 전량 조회로 다룬다.
+export async function fetchVehicleTrims(brandName?: string): Promise<VehicleTrim[]> {
+  if (USE_MOCK) return delay(MOCK_VEHICLE_TRIMS.filter((t) => !brandName || t.brand === brandName))
+  return getJson<VehicleTrim[]>('/vehicle-trims', { brandName, size: 100 })
 }
 
 export async function fetchConnectorTypes(): Promise<ConnectorType[]> {

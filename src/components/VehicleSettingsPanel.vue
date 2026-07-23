@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import type { ChargingNetwork, VehicleSettings, VehicleTrim } from '../types'
-import { fetchChargingNetworks, fetchVehicleTrims } from '../api/client'
+import type { Brand, ChargingNetwork, VehicleSettings, VehicleTrim } from '../types'
+import { fetchBrands, fetchChargingNetworks, fetchVehicleTrims } from '../api/client'
 import { useVehicleSettings } from '../composables/useVehicleSettings'
 
 const { settings, save } = useVehicleSettings()
 const emit = defineEmits<{ (e: 'saved'): void }>()
 
-const trims = ref<VehicleTrim[]>([])
+const brands = ref<Brand[]>([])
+const trims = ref<VehicleTrim[]>([]) // 선택된 브랜드의 트림만 담는다 (전체 트림 아님)
 const networks = ref<ChargingNetwork[]>([])
+const loadingTrims = ref(false)
 
 const form = reactive({
   brand: '',
@@ -20,14 +22,23 @@ const form = reactive({
   targetSoc: 80,
 })
 
-const brands = computed(() => [...new Set(trims.value.map((t) => t.brand))])
-const models = computed(() => [...new Set(trims.value.filter((t) => t.brand === form.brand).map((t) => t.modelName))])
-const trimOptions = computed(() => trims.value.filter((t) => t.brand === form.brand && t.modelName === form.modelName))
+const models = computed(() => [...new Set(trims.value.map((t) => t.modelName))])
+const trimOptions = computed(() => trims.value.filter((t) => t.modelName === form.modelName))
 const selectedTrim = computed(() => trims.value.find((t) => t.vehicleTrimId === form.vehicleTrimId) ?? null)
 
+// 브랜드 선택이 바뀔 때마다 해당 브랜드의 트림만 서버에서 새로 받아온다
+async function loadTrimsForBrand(brandName: string) {
+  loadingTrims.value = true
+  try {
+    trims.value = brandName ? await fetchVehicleTrims(brandName) : []
+  } finally {
+    loadingTrims.value = false
+  }
+}
+
 onMounted(async () => {
-  const [trimList, networkList] = await Promise.all([fetchVehicleTrims(), fetchChargingNetworks()])
-  trims.value = trimList
+  const [brandList, networkList] = await Promise.all([fetchBrands(), fetchChargingNetworks()])
+  brands.value = brandList
   networks.value = networkList
 
   const current = settings.value
@@ -39,14 +50,17 @@ onMounted(async () => {
     form.isMember = current.isMember
     form.currentSoc = current.currentSoc
     form.targetSoc = current.targetSoc
-  } else if (trimList.length > 0) {
-    form.brand = trimList[0].brand
-    form.modelName = trimList[0].modelName
-    form.vehicleTrimId = trimList[0].vehicleTrimId
+    await loadTrimsForBrand(current.brand)
+  } else if (brandList.length > 0) {
+    form.brand = brandList[0].brandName
+    await loadTrimsForBrand(form.brand)
+    form.modelName = trims.value[0]?.modelName ?? ''
+    form.vehicleTrimId = trims.value[0]?.vehicleTrimId ?? null
   }
 })
 
-function onBrandChange() {
+async function onBrandChange() {
+  await loadTrimsForBrand(form.brand)
   form.modelName = models.value[0] ?? ''
   form.vehicleTrimId = trimOptions.value[0]?.vehicleTrimId ?? null
 }
@@ -83,18 +97,18 @@ function onSave() {
       <label class="field">
         <span>브랜드 <em>*</em></span>
         <select v-model="form.brand" @change="onBrandChange">
-          <option v-for="b in brands" :key="b" :value="b">{{ b }}</option>
+          <option v-for="b in brands" :key="b.brandId" :value="b.brandName">{{ b.brandName }}</option>
         </select>
       </label>
       <label class="field">
         <span>모델 <em>*</em></span>
-        <select v-model="form.modelName" @change="onModelChange">
+        <select v-model="form.modelName" @change="onModelChange" :disabled="loadingTrims">
           <option v-for="m in models" :key="m" :value="m">{{ m }}</option>
         </select>
       </label>
       <label class="field">
         <span>트림 <em>*</em></span>
-        <select v-model.number="form.vehicleTrimId">
+        <select v-model.number="form.vehicleTrimId" :disabled="loadingTrims">
           <option v-for="t in trimOptions" :key="t.vehicleTrimId" :value="t.vehicleTrimId">{{ t.trimName }}</option>
         </select>
       </label>

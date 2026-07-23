@@ -1,4 +1,5 @@
 import type {
+  Brand,
   ChargerDetail,
   ChargingNetwork,
   ConnectorType,
@@ -27,6 +28,10 @@ export const MOCK_VEHICLE_TRIMS: VehicleTrim[] = [
   { vehicleTrimId: 105, brand: '테슬라', modelName: '모델Y', trimName: 'RWD', batteryKwh: 60, normalRangeKm: 350, coldRangeKm: 290, maxAcKw: 11, maxDcKw: 170, connectorCodes: ['NACS'] },
   { vehicleTrimId: 106, brand: '제네시스', modelName: 'GV60', trimName: '스탠다드 AWD', batteryKwh: 77.4, normalRangeKm: 451, coldRangeKm: 380, maxAcKw: 11, maxDcKw: 235, connectorCodes: ['DC_COMBO', 'AC_SLOW'] },
 ]
+
+export const MOCK_BRANDS: Brand[] = [...new Set(MOCK_VEHICLE_TRIMS.map((t) => t.brand))]
+  .sort((a, b) => a.localeCompare(b, 'ko'))
+  .map((brandName, i) => ({ brandId: i + 1, brandName }))
 
 export const MOCK_CHARGING_NETWORKS: ChargingNetwork[] = [
   { networkId: 21, networkName: '환경부 급속', operatorName: '한국환경공단' },
