@@ -200,7 +200,10 @@ select {
   color: var(--doro-text);
 }
 /* size 속성으로 목록형(listbox)이 된 select — 6줄만 보이고 나머지는 스크롤 */
+/* size=N의 브라우저 자동 높이 계산이 option padding과 어긋나 6줄보다 훨씬 크게 렌더링되는
+   문제가 있어, 높이를 직접 고정한다 (6줄 * 28px). */
 .brand-select {
+  height: 168px;
   overflow-y: auto;
   padding: 4px;
 }
