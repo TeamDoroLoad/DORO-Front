@@ -5,6 +5,11 @@ export interface ConnectorType {
   connectorName: string
 }
 
+export interface Brand {
+  brandId: number
+  brandName: string
+}
+
 export interface VehicleTrim {
   vehicleTrimId: number
   brand: string
