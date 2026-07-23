@@ -96,7 +96,7 @@ function onSave() {
       <h2>차량 정보</h2>
       <label class="field">
         <span>브랜드 <em>*</em></span>
-        <select v-model="form.brand" @change="onBrandChange">
+        <select v-model="form.brand" @change="onBrandChange" size="6" class="brand-select">
           <option v-for="b in brands" :key="b.brandId" :value="b.brandName">{{ b.brandName }}</option>
         </select>
       </label>
@@ -198,6 +198,15 @@ select {
   font-size: 13.5px;
   background: var(--doro-bg);
   color: var(--doro-text);
+}
+/* size 속성으로 목록형(listbox)이 된 select — 6줄만 보이고 나머지는 스크롤 */
+.brand-select {
+  overflow-y: auto;
+  padding: 4px;
+}
+.brand-select option {
+  padding: 7px 6px;
+  border-radius: 4px;
 }
 input[type='range'] {
   accent-color: var(--doro-blue);
